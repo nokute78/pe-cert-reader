@@ -31,7 +31,7 @@ jobs:
         fi
 
     - name: Build
-      run: go build -v .
+      run: go build -v -o pe-cert-reader cmd/pe-cert-reader/*.go
 
     - name: Test
       run: go test -v ./...
