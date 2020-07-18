@@ -17,8 +17,59 @@
 package pecert
 
 import (
+	"bytes"
+	"encoding/binary"
 	"testing"
 )
+
+func createAttributeCert(t *testing.T, body []byte) *AttributeCertificate {
+	t.Helper()
+	h := AttributeCertificateHeader{DwLength: uint32(8 + len(body)), WRevision: 0x0200, WCertificateType: WIN_CERT_TYPE_PKCS_SIGNED_DATA}
+	return &AttributeCertificate{AttributeCertificateHeader: h, BCertificate: body}
+}
+
+func TestMultipleCert(t *testing.T) {
+	border := binary.LittleEndian
+	bodys := [][]byte{[]byte{0xaa, 0xbb, 0xcc}, []byte{0xaa, 0xbb, 0xcc, 0xdd, 0xee}}
+	certs := []*AttributeCertificate{}
+	for _, v := range bodys {
+		certs = append(certs, createAttributeCert(t, v))
+	}
+
+	buffer := bytes.NewBuffer([]byte{})
+
+	for _, v := range certs {
+		if err := binary.Write(buffer, border, v.AttributeCertificateHeader); err != nil {
+			t.Fatalf("1st binary.Write:%s", err)
+		}
+		_, err := buffer.Write(v.BCertificate)
+		if err != nil {
+			t.Fatalf("1st buffer.Write:%s", err)
+		}
+		for i := 0; i < 8-len(v.BCertificate); i++ {
+			if err := buffer.WriteByte(0x00); err != nil {
+				t.Fatalf("buffer.WriteByte:%s", err)
+			}
+		}
+	}
+	rets, err := getAttributeCertificatesFromBytes(buffer.Bytes(), border)
+	if err != nil {
+		t.Fatalf("%s", err)
+	}
+
+	if len(rets) != len(certs) {
+		t.Fatalf("length error. given:%d expect:%d", len(rets), len(certs))
+	}
+	for i, ret := range rets {
+		if ret.AttributeCertificateHeader != certs[i].AttributeCertificateHeader {
+			t.Fatalf("mismatch:given %v, expect %v", ret, certs[i])
+		}
+		if bytes.Compare(ret.BCertificate, certs[i].BCertificate) != 0 {
+			t.Fatalf("mismatch cert:given %v, expect %v", ret, certs[i])
+		}
+	}
+
+}
 
 func TestWCertTypeStr(t *testing.T) {
 	type testcase struct {
