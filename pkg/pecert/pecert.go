@@ -87,9 +87,9 @@ func GetCertTableDirectory(f *pe.File) (pe.DataDirectory, error) {
 }
 
 func getAttributeCertificatesFromBytes(b []byte, o binary.ByteOrder) ([]AttributeCertificate, error) {
+	var offset int64
 	headersize := 8
 	ret := []AttributeCertificate{}
-
 	r := bytes.NewReader(b)
 
 	for r.Len() > headersize /*header size */ {
@@ -97,8 +97,7 @@ func getAttributeCertificatesFromBytes(b []byte, o binary.ByteOrder) ([]Attribut
 		if err := binary.Read(r, o, &h); err != nil {
 			return ret, fmt.Errorf("binary.Read:%w", err)
 		}
-		var t AttributeCertificate
-		t.AttributeCertificateHeader = h
+		t := AttributeCertificate{AttributeCertificateHeader: h}
 		certb := make([]byte, t.DwLength-uint32(headersize))
 		_, err := r.Read(certb)
 		if err != nil {
@@ -108,6 +107,12 @@ func getAttributeCertificatesFromBytes(b []byte, o binary.ByteOrder) ([]Attribut
 		}*/
 		t.BCertificate = certb
 		ret = append(ret, t)
+
+		offset += 8 + int64(len(certb))
+		_, err = r.Seek(8-(offset%8), io.SeekCurrent)
+		if err != nil {
+			return ret, fmt.Errorf("bytes.Seek:%w", err)
+		}
 	}
 
 	return ret, nil
