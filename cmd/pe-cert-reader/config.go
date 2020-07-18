@@ -39,7 +39,7 @@ func Configure(args []string, silent bool) (*Config, error) {
 		return nil, ConfigNoArgs
 	}
 
-	opt := flag.NewFlagSet("simple", flag.ContinueOnError)
+	opt := flag.NewFlagSet("pe-cert-reader", flag.ContinueOnError)
 	opt.BoolVar(&ret.showVersion, "V", false, "show Version")
 	opt.BoolVar(&ret.dumpCert, "d", false, "dump certs")
 
