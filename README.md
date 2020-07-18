@@ -5,6 +5,42 @@
 
 A library and tool to read certs of PE file.
 
+## Command
+
+```
+$ ./pe-cert-reader -h
+Usage of pe-cert-reader:
+  -V	show Version
+  -d	dump certs
+```
+
+`-d` option dump cert(s) from PE file. The suffix of cert file is `.certX`.
+
+## Example
+
+```go
+package main
+
+import (
+	"flag"
+	"fmt"
+	"github.com/nokute78/pe-cert-reader/pkg/pecert"
+)
+
+func main() {
+	flag.Parse()
+	for _, file := range flag.Args() {
+		attrs, err := pecert.GetAttributeCertificatesFromPath(file)
+		if err != nil {
+			fmt.Printf("%s\n", err)
+		}
+		for i, attr := range attrs {
+			fmt.Printf("%d: %v\n",i, attr)
+		}
+	}
+}
+```
+
 ## Reference
 
 [PE Format Specification](https://docs.microsoft.com/en-us/windows/win32/debug/pe-format)
